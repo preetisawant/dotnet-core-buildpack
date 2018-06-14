@@ -20,7 +20,7 @@ import (
 )
 
 func defaultCleanup(app *cutlass.App) {
-	DestroyApp(app)
+	//DestroyApp(app)
 	os.RemoveAll(app.Path)
 }
 
@@ -341,10 +341,11 @@ func ForAllSupportedVersions2(depName1, depName2 string, compatible func(string,
 			version1 := v1
 			for _, v2 := range versions2 {
 				version2 := v2
-				if compatible(v1, v2) {
-					It(fmt.Sprintf(itString, version1, version2), func() {
+				if v1 == "1.0.4" && v2 == "1.0.10" && compatible(v1, v2) {
+					FIt(fmt.Sprintf(itString, version1, version2), func() {
 						app = copyBrats(version1, version2)
 						app.Buildpacks = []string{Data.Cached}
+						app.SetEnv("BP_DEBUG", "1")
 
 						runTests(version1, version2, app)
 					})

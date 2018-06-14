@@ -95,6 +95,17 @@ func (d *DotnetFramework) getFrameworkDir() string {
 }
 
 func (d *DotnetFramework) isInstalled(version string) (bool, error) {
+
+	files, err := ioutil.ReadDir(d.getFrameworkDir())
+	if err != nil {
+		return false, err
+	}
+
+	d.logger.Error("FWDIR1!!! %d\n", d.getFrameworkDir())
+	for _, f := range files {
+		d.logger.Error("FW1!!! %s\n", f.Name())
+	}
+
 	frameworkPath := filepath.Join(d.getFrameworkDir(), version)
 	if exists, err := libbuildpack.FileExists(frameworkPath); err != nil {
 		return false, err
@@ -109,7 +120,19 @@ func (d *DotnetFramework) installFramework(version string) error {
 	if err := d.installer.InstallDependency(libbuildpack.Dependency{Name: "dotnet-framework", Version: version}, filepath.Join(d.depDir, "dotnet")); err != nil {
 		return err
 	}
+
+	files, err := ioutil.ReadDir(d.getFrameworkDir())
+	if err != nil {
+		return err
+	}
+	d.logger.Error("FWDIR2!!! %d\n", d.getFrameworkDir())
+
+	for _, f := range files {
+		d.logger.Error("FW2!!! %s\n", f.Name())
+	}
+
 	return nil
+
 }
 
 func (d *DotnetFramework) runtimeConfigFile() (string, error) {
