@@ -114,6 +114,7 @@ func (p *Project) publishedStartCommand(projectPath string) (string, error) {
 	var runtimePath string
 
 	if published, err := p.IsPublished(); err != nil {
+		fmt.Fprintf(os.Stderr, "HERE1 %s\n", err)
 		return "", err
 	} else if published {
 		publishedPath = p.buildDir
@@ -122,26 +123,36 @@ func (p *Project) publishedStartCommand(projectPath string) (string, error) {
 		publishedPath = filepath.Join(p.depDir, "dotnet_publish")
 		runtimePath = filepath.Join("${DEPS_DIR}", p.depsIdx, "dotnet_publish")
 	}
+	fmt.Fprintf(os.Stderr, "PUBPATH = %s\n", publishedPath)
+	fmt.Fprintf(os.Stderr, "RUNTIMEPATH = %s\n", runtimePath)
 
+	filepath.Join(runtimePath, projectPath)
 	if exists, err := libbuildpack.FileExists(filepath.Join(publishedPath, projectPath)); err != nil {
+		fmt.Fprintf(os.Stderr, "HERE2 %s\n", err)
 		return "", nil
 	} else if exists {
 		if err := os.Chmod(filepath.Join(filepath.Join(publishedPath, projectPath)), 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "HERE3 %s\n", err)
 			return "", nil
 		}
+		fmt.Fprintf(os.Stderr, "HERE4 %s\n", filepath.Join(runtimePath, projectPath))
 		return filepath.Join(runtimePath, projectPath), nil
 	}
 
 	if exists, err := libbuildpack.FileExists(filepath.Join(publishedPath, fmt.Sprintf("%s.dll", projectPath))); err != nil {
+		fmt.Fprintf(os.Stderr, "HERE5 %s\n", err)
 		return "", nil
 	} else if exists {
+		fmt.Fprintf(os.Stderr, "HERE6 %s\n", fmt.Sprintf("%s.dll", filepath.Join(runtimePath, projectPath)))
 		return fmt.Sprintf("%s.dll", filepath.Join(runtimePath, projectPath)), nil
 	}
+	fmt.Fprint(os.Stderr, "HERE7\n")
 	return "", nil
 }
 
 func (p *Project) StartCommand() (string, error) {
 	projectPath, err := p.MainPath()
+	fmt.Fprintf(os.Stderr, "PROJPATH = %s\n", projectPath)
 	if err != nil {
 		return "", err
 	} else if projectPath == "" {
@@ -150,6 +161,7 @@ func (p *Project) StartCommand() (string, error) {
 
 	re := regexp.MustCompile(`\.(runtimeconfig\.json|[a-z]+proj)$`)
 	projectPath = re.ReplaceAllString(projectPath, "")
+	fmt.Fprintf(os.Stderr, "PROJPATH_2 = %s\n", projectPath)
 	projectPath = filepath.Base(projectPath)
 
 	return p.publishedStartCommand(projectPath)

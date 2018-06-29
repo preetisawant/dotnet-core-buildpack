@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <DebugType>portable</DebugType>
-    <AssemblyName>simple_brats</AssemblyName>
+    <AssemblyName>simple.brats</AssemblyName>
     <OutputType>Exe</OutputType>
     <RuntimeFrameworkVersion>2.0.*</RuntimeFrameworkVersion>
   </PropertyGroup>

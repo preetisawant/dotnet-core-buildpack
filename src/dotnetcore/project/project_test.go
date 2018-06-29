@@ -264,7 +264,7 @@ var _ = Describe("Project", func() {
 				})
 			})
 		})
-		Context("The project has multiple dots in its name", func() {
+		FContext("The project has multiple dots in its name", func() {
 			Context("It is a published project", func() {
 				BeforeEach(func() {
 					Expect(ioutil.WriteFile(filepath.Join(buildDir, "f.red.runtimeconfig.json"), []byte(""), 0644)).To(Succeed())

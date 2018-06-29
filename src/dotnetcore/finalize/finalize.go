@@ -142,6 +142,7 @@ func (f *Finalizer) GenerateReleaseYaml() (map[string]map[string]string, error) 
 	if err != nil {
 		return nil, err
 	}
+	f.Log.Error("STARTCMD = %s", startCmd)
 	directory := filepath.Dir(startCmd)
 	startCmd = "./" + filepath.Base(startCmd)
 	if strings.HasSuffix(startCmd, ".dll") {
