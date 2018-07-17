@@ -54,11 +54,9 @@ func (d *DotnetFramework) Install() error {
 }
 
 func (d *DotnetFramework) requiredVersions() ([]string, error) {
-	runtimeFile, err := d.runtimeConfigFile()
-	if err != nil {
+	if runtimeFile, err := d.runtimeConfigFile(); err != nil {
 		return []string{}, err
-	}
-	if runtimeFile != "" {
+	} else if runtimeFile != "" {
 		obj := struct {
 			RuntimeOptions struct {
 				Framework struct {
@@ -72,36 +70,66 @@ func (d *DotnetFramework) requiredVersions() ([]string, error) {
 		if err := libbuildpack.NewJSON().Load(runtimeFile, &obj); err != nil {
 			return []string{}, err
 		}
+
 		version := obj.RuntimeOptions.Framework.Version
 		if version != "" {
 			if obj.RuntimeOptions.ApplyPatches == nil || *obj.RuntimeOptions.ApplyPatches {
-				v := strings.Split(version, ".")
-				v[2] = "x"
-				versions := d.manifest.AllDependencyVersions("dotnet-framework")
-				version, err = libbuildpack.FindMatchingVersion(strings.Join(v, "."), versions)
+				version, err = d.latestPatchVersion(version)
 				if err != nil {
 					return []string{}, err
 				}
 			}
 			return []string{version}, nil
 		}
+
 		return []string{}, nil
 	}
+
 	restoredVersionsDir := filepath.Join(d.depDir, ".nuget", "packages", "microsoft.netcore.app")
 	if exists, err := libbuildpack.FileExists(restoredVersionsDir); err != nil {
 		return []string{}, err
 	} else if !exists {
 		return []string{}, nil
 	}
+
 	files, err := ioutil.ReadDir(restoredVersionsDir)
 	if err != nil {
 		return []string{}, err
 	}
-	var versions []string
+
+	patchVersions := make(map[string]bool)
 	for _, f := range files {
-		versions = append(versions, f.Name())
+		version, err := d.latestPatchVersion(f.Name())
+		if err != nil {
+			return []string{}, err
+		}
+		if _, ok := patchVersions[version]; !ok {
+			patchVersions[version] = true
+		}
 	}
+
+	var versions []string
+	for k := range patchVersions {
+		versions = append(versions, k)
+	}
+
 	return versions, nil
+}
+
+func (d *DotnetFramework) latestPatchVersion(originalVersion string) (string, error) {
+	v := strings.Split(originalVersion, ".")
+	if len(v) < 3 {
+		return "", fmt.Errorf("received malformed version string: %s", originalVersion)
+	}
+	v[2] = "x"
+
+	manifestVersions := d.manifest.AllDependencyVersions("dotnet-framework")
+	version, err := libbuildpack.FindMatchingVersion(strings.Join(v, "."), manifestVersions);
+	if err != nil {
+		return "", err
+	}
+
+	return version, nil
 }
 
 func (d *DotnetFramework) getFrameworkDir() string {

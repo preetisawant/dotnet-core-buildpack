@@ -151,7 +151,7 @@ var _ = Describe("CF Dotnet Buildpack", func() {
 
 		It("installs the exact version of dotnet runtime framework from the runtimeconfig.json", func() {
 			PushAppAndConfirm(app)
-			Expect(app.Stdout.String()).To(ContainSubstring("Installing dotnet-framework 2.0.0"))
+			Expect(app.Stdout.String()).To(MatchRegexp("Using dotnet framework installed in \\/tmp\\/.*\\/dotnet\\/shared\\/Microsoft.NETCore.App\\/2.0.9"))
 		})
 	})
 
