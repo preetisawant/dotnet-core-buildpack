@@ -39,7 +39,7 @@ func init() {
 var _ = SynchronizedBeforeSuite(func() []byte {
 	// Run once
 	if buildpackVersion == "" {
-		packagedBuildpack, err := cutlass.PackageUniquelyVersionedBuildpack(os.Getenv("CF_STACK"))
+		packagedBuildpack, err := cutlass.PackageUniquelyVersionedBuildpack(os.Getenv("CF_STACK"), true)
 		Expect(err).NotTo(HaveOccurred())
 
 		buildpackFile, err := os.Open(packagedBuildpack.File) // For read access.

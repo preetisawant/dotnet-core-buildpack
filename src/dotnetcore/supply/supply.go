@@ -302,7 +302,9 @@ func (s *Supplier) pickVersionToInstall() (string, error) {
 		return "", err
 	} else if found {
 		s.Log.Info("using the default FSharp SDK")
-		return libbuildpack.FindMatchingVersion("1.1.x", allVersions)
+		fs_version, _ := libbuildpack.FindMatchingVersion("2.0.x", allVersions)
+		fmt.Printf("version found: %s", fs_version)
+		return fs_version, nil
 	}
 
 	dep, err := s.Manifest.DefaultVersion("dotnet")

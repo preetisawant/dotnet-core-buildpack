@@ -177,7 +177,7 @@ var _ = Describe("CF Dotnet Buildpack", func() {
 		})
 	})
 
-	FContext("for a non-published app", func() {
+	Context("for a non-published app", func() {
 		BeforeEach(func() {
 			app = cutlass.New(filepath.Join(bpDir, "fixtures", "with_dot_in_name"))
 		})
