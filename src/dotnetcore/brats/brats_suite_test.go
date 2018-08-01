@@ -69,13 +69,63 @@ func FirstOfVersionLine(dependency, line string) string {
 	return versions[0]
 }
 
-func CopyBratsWithFramework(sdkVersion, frameworkVersion string) *cutlass.App {
+func copyBratsWithFramework(sdkVersion, frameworkVersion, fixture string,) *cutlass.App {
 	manifest, err := libbuildpack.NewManifest(bratshelper.Data.BpDir, nil, time.Now())
 	Expect(err).ToNot(HaveOccurred())
 
 	if sdkVersion == "" {
 		sdkVersion = "x"
 	}
+
+	if strings.Contains(sdkVersion, "x") {
+		deps := manifest.AllDependencyVersions("dotnet")
+		sdkVersion, err = libbuildpack.FindMatchingVersion(sdkVersion, deps)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	if frameworkVersion == "" {
+		frameworkVersion = "x"
+	}
+
+	if strings.Contains(frameworkVersion, "x") {
+		deps := manifest.AllDependencyVersions("dotnet-framework")
+		frameworkVersion, err = libbuildpack.FindMatchingVersion(frameworkVersion, deps)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	versionParts := strings.Split(frameworkVersion, ".")
+	netCoreApp := fmt.Sprintf("netcoreapp%s.%s", versionParts[0], versionParts[1])
+
+	dir, err := cutlass.CopyFixture(filepath.Join(bratshelper.Data.BpDir, "fixtures", fixture))
+	Expect(err).ToNot(HaveOccurred())
+
+
+	matches, err := filepath.Glob(fmt.Sprintf("%s.*sproj", fixture))
+	Expect(err).NotTo(HaveOccurred())
+	Expect(len(matches)).To(Equal(1))
+
+
+	for _, file := range []string{"simple_brats.csproj", "global.json"} {
+		data, err := ioutil.ReadFile(filepath.Join(dir, file))
+		Expect(err).ToNot(HaveOccurred())
+
+		data = bytes.Replace(data, []byte("<%= net_core_app %>"), []byte(netCoreApp), -1)
+		data = bytes.Replace(data, []byte("<%= framework_version %>"), []byte(frameworkVersion), -1)
+		data = bytes.Replace(data, []byte("<%= sdk_version %>"), []byte(sdkVersion), -1)
+		Expect(ioutil.WriteFile(filepath.Join(dir, file), data, 0644)).To(Succeed())
+	}
+
+	return cutlass.New(dir)
+}
+
+func CopyCSharpBratsWithFramework(sdkVersion, frameworkVersion string) *cutlass.App {
+	manifest, err := libbuildpack.NewManifest(bratshelper.Data.BpDir, nil, time.Now())
+	Expect(err).ToNot(HaveOccurred())
+
+	if sdkVersion == "" {
+		sdkVersion = "x"
+	}
+
 	if strings.Contains(sdkVersion, "x") {
 		deps := manifest.AllDependencyVersions("dotnet")
 		sdkVersion, err = libbuildpack.FindMatchingVersion(sdkVersion, deps)
@@ -98,6 +148,48 @@ func CopyBratsWithFramework(sdkVersion, frameworkVersion string) *cutlass.App {
 	Expect(err).ToNot(HaveOccurred())
 
 	for _, file := range []string{"simple_brats.csproj", "global.json"} {
+		data, err := ioutil.ReadFile(filepath.Join(dir, file))
+		Expect(err).ToNot(HaveOccurred())
+		data = bytes.Replace(data, []byte("<%= net_core_app %>"), []byte(netCoreApp), -1)
+		data = bytes.Replace(data, []byte("<%= framework_version %>"), []byte(frameworkVersion), -1)
+		data = bytes.Replace(data, []byte("<%= sdk_version %>"), []byte(sdkVersion), -1)
+		Expect(ioutil.WriteFile(filepath.Join(dir, file), data, 0644)).To(Succeed())
+	}
+
+	return cutlass.New(dir)
+}
+
+func CopyFSharpBratsWithFramework(sdkVersion, frameworkVersion string) *cutlass.App {
+	manifest, err := libbuildpack.NewManifest(bratshelper.Data.BpDir, nil, time.Now())
+	Expect(err).ToNot(HaveOccurred())
+
+	if sdkVersion == "" {
+		sdkVersion = "x"
+	}
+
+	if strings.Contains(sdkVersion, "x") {
+		deps := manifest.AllDependencyVersions("dotnet")
+		sdkVersion, err = libbuildpack.FindMatchingVersion(sdkVersion, deps)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	if frameworkVersion == "" {
+		frameworkVersion = "x"
+	}
+
+	if strings.Contains(frameworkVersion, "x") {
+		deps := manifest.AllDependencyVersions("dotnet-framework")
+		frameworkVersion, err = libbuildpack.FindMatchingVersion(frameworkVersion, deps)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	versionParts := strings.Split(frameworkVersion, ".")
+	netCoreApp := fmt.Sprintf("netcoreapp%s.%s", versionParts[0], versionParts[1])
+
+	dir, err := cutlass.CopyFixture(filepath.Join(bratshelper.Data.BpDir, "fixtures", "simple_fsharp_brats"))
+	Expect(err).ToNot(HaveOccurred())
+
+	for _, file := range []string{"simple_fsharp_brats.fsproj", "global.json"} {
 		data, err := ioutil.ReadFile(filepath.Join(dir, file))
 		Expect(err).ToNot(HaveOccurred())
 		data = bytes.Replace(data, []byte("<%= net_core_app %>"), []byte(netCoreApp), -1)

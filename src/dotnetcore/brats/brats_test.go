@@ -9,47 +9,81 @@ import (
 )
 
 var _ = Describe("Dotnet buildpack", func() {
-	bratshelper.UnbuiltBuildpack("dotnet", CopyBrats)
-	bratshelper.DeployingAnAppWithAnUpdatedVersionOfTheSameBuildpack(CopyBrats)
-	oldDotnetVersion := FirstOfVersionLine("dotnet", "2.1.301")
-	bratshelper.StagingWithADepThatIsNotTheLatestConstrained("dotnet", oldDotnetVersion, func(v string) *cutlass.App { return CopyBratsWithFramework(v, "2.1.x") })
-	bratshelper.StagingWithCustomBuildpackWithCredentialsInDependencies(`dotnet\.[\d\.]+\.linux\-amd64\-.*\-[\da-f]+\.tar.xz`, CopyBrats)
-	bratshelper.DeployAppWithExecutableProfileScript("dotnet", CopyBrats)
-	bratshelper.DeployAnAppWithSensitiveEnvironmentVariables(CopyBrats)
+	//bratshelper.UnbuiltBuildpack("dotnet", CopyBrats)
+	//
+	//bratshelper.DeployingAnAppWithAnUpdatedVersionOfTheSameBuildpack(CopyBrats)
+	//
+	//bratshelper.StagingWithADepThatIsNotTheLatestConstrained(
+	//	"dotnet",
+	//	FirstOfVersionLine("dotnet", "2.1.301"),
+	//	func(v string) *cutlass.App { return CopyBratsWithFramework(v, "2.1.x") },
+	//)
+	//
+	//bratshelper.StagingWithCustomBuildpackWithCredentialsInDependencies(
+	//	`dotnet\.[\d\.]+\.linux\-amd64\-.*\-[\da-f]+\.tar.xz`,
+	//	CopyBrats,
+	//)
+	//
+	//bratshelper.DeployAppWithExecutableProfileScript("dotnet", CopyBrats)
+	//
+	//bratshelper.DeployAnAppWithSensitiveEnvironmentVariables(CopyBrats)
 
 	compatible := func(sdkVersion, frameworkVersion string) bool {
-
-		var sdk, framework semver.Version
-		var err error
-		if sdk, err = semver.Parse(sdkVersion); err != nil {
-			panic(err)
-		}
-		if framework, err = semver.Parse(frameworkVersion); err != nil {
+		sdk, err := semver.Parse(sdkVersion)
+		if err != nil {
 			panic(err)
 		}
 
-		ret := sdk.Major == framework.Major
-
-		sdk2_1_300, _ := semver.Parse("2.1.300")
-		framework2_1_0, _ := semver.Parse("2.1.0")
-
-		if framework.GTE(framework2_1_0) {
-			ret = ret && sdk.GTE(sdk2_1_300)
+		framework, err := semver.Parse(frameworkVersion)
+		if err != nil {
+			panic(err)
 		}
 
-		return ret
+		isCompatible := sdk.Major == framework.Major
 
+		framework210 := semver.MustParse("2.1.0")
+		if framework.GTE(framework210) {
+			sdk21300 := semver.MustParse("2.1.300")
+			isCompatible = isCompatible && sdk.GTE(sdk21300)
+		}
+
+		return isCompatible
 	}
-	bratshelper.ForAllSupportedVersions2("dotnet", "dotnet-framework", compatible, "with .NET SDK version: %s and .NET Framework version: %s", CopyBratsWithFramework, func(sdkVersion, frameworkVersion string, app *cutlass.App) {
+
+	ensureAppWorks := func(sdkVersion, frameworkVersion string, app *cutlass.App) {
 		PushApp(app)
 
 		By("installs the correct version of .NET SDK + .NET Framework", func() {
 			Expect(app.Stdout.String()).To(ContainSubstring("Installing dotnet " + sdkVersion))
-			Expect(app.Stdout.String()).To(MatchRegexp("(Using dotnet framework installed in .*\\Q/dotnet/shared/Microsoft.NETCore.App/%s\\E|\\QInstalling dotnet-framework %s\\E)", frameworkVersion, frameworkVersion))
+			Expect(app.Stdout.String()).To(MatchRegexp(
+				"(Using dotnet framework installed in .*\\Q/dotnet/shared/Microsoft.NETCore.App/%s\\E|\\QInstalling dotnet-framework %s\\E)",
+				frameworkVersion,
+				frameworkVersion,
+			))
 		})
 
-		By("runs a simple webserver", func() {
+		By("runs a simple web server", func() {
 			Expect(app.GetBody("/")).To(ContainSubstring("Hello World!"))
 		})
-	})
+	}
+
+	//// For C# apps
+	//bratshelper.ForAllSupportedVersions2(
+	//	"dotnet",
+	//	"dotnet-framework",
+	//	compatible,
+	//	"with .NET SDK version: %s and .NET Framework version: %s",
+	//	CopyBratsWithFramework,
+	//	ensureAppWorks,
+	//)
+
+	// For F# apps
+	bratshelper.ForAllSupportedVersions2(
+		"dotnet",
+		"dotnet-framework",
+		compatible,
+		"with .NET SDK version: %s and .NET Framework version: %s",
+		CopyFSharpBratsWithFramework,
+		ensureAppWorks,
+	)
 })
